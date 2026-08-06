@@ -1,0 +1,89 @@
+# 论文推荐评价准则
+# 每次推荐时使用此文件中的量化规则进行打分
+
+criteria:
+  timeliness:
+    weight: 20
+    description: "时效性——越新的研究越有前沿参考价值"
+    scoring:
+      2025_2026: 5
+      2023_2024: 3
+      earlier: 1
+    exception: "经典综述（被引>200或发表于Nature/Science/TPAMI级别期刊）不受年份限制，人工判断后直接给5分"
+
+  innovation:
+    weight: 20
+    description: "创新启发——对灵巧手触觉感知是否有方法层面的启发"
+    scoring:
+      new_paradigm: 5       # 全新触觉感知范式（如弹性波、超声、摩擦电、量子隧道等）
+      significant_improvement: 4  # 同类路线但重大改进（如磁触觉+新解耦方法、传感器布局数学优化）
+      solid_engineering: 3  # 同类路线的扎实工程改进（如更好的标定方法、噪声抑制、域自适应）
+      incremental: 2        # 同类路线的微小修改
+      low_relevance: 1      # 光学/视觉触觉等与磁触觉关联弱的路线
+    note: "核心判断标准：这篇论文能否为磁触觉灵巧手算法提供方法层面的创意启发？光学传感器（GelSight等）的纯视觉处理管线与我们的磁场信号处理路线差异较大，价值偏低。"
+
+  relevance:
+    weight: 30
+    description: "相关度——与磁触觉灵巧手技术路线有多近"
+    scoring:
+      hit_3plus_clusters: 5    # 命中3个以上关键词簇
+      hit_2_clusters: 3        # 命中2个关键词簇
+      hit_1_cluster: 1         # 命中1个关键词簇
+      no_hit: 0                # 未命中任何关键词簇，不推荐
+    clusters:
+      - "磁触觉/霍尔传感器/磁场感知/磁定位"
+      - "灵巧手/机器人手指/末端执行器/拟人手"
+      - "传感器阵列/触觉皮肤/电子皮肤"
+      - "触觉深度学习/Transformer/GNN/迁移学习"
+      - "磁场建模/偶极子/正演反演/有限元"
+      - "灵巧手控制/力控/抓取规划/滑移检测"
+      - "触觉仿真/COMSOL/虚实迁移"
+
+  reproducibility:
+    weight: 20
+    description: "可复现性——能否直接验证论文方法"
+    scoring:
+      open_source: 5           # GitHub上有可运行的代码
+      full_specs: 3            # 无代码但有完整架构图+超参表
+      text_only: 1             # 仅有文字描述，无参数细节
+    note: "优先推荐有开源代码的论文，这是我们快速验证和融入pipeline的前提"
+
+  practicality:
+    weight: 10
+    description: "实用性——能否在我们的demo数据上快速验证"
+    scoring:
+      ready_to_test: 5         # 方法可直接在我们的18D磁场数据上验证
+      needs_adaptation: 3      # 需要适配（如输入维度变化、需要额外传感器）
+      needs_special_hardware: 1 # 需要我们不具备的特殊硬件
+
+  # --- 补充准则 ---
+  engineering_feasibility:
+    weight: 5
+    description: "工程可行性——计算资源需求是否在我们能力范围内"
+    scoring:
+      lightweight: 5           # 单GPU <1天，或纯CPU可运行
+      moderate: 3             # 单GPU 1-7天
+      heavy: 1                # 多GPU集群，超出我们能力
+
+  diversity:
+    weight: 5
+    description: "互补多样性——避免推荐回音壁"
+    method: "与最近5个工作日已推荐论文标题做embedding cosine相似度。相似度>0.85扣2分，>0.95扣4分"
+    note: "确保每周推荐覆盖至少3个不同的子方向"
+
+  patent_bonus:
+    weight: 0
+    description: "专利额外加分（直接加到总分）"
+    bonus: 1
+    frequency: "每3个工作日至少推荐1篇专利"
+    sources:
+      - "Google Patents (patents.google.com)"
+      - "WIPO Patentscope (patentscope.wipo.int)"
+      - "中国国家知识产权局 (pss-system.cponline.cnipa.gov.cn)"
+      - "中国知网专利数据库 (kns.cnki.net)"
+      - "SooPAT (www.soopat.com)"
+    cn_patent_keywords:
+      - "磁触觉 AND 灵巧手"
+      - "霍尔传感器 AND 机器人手指"
+      - "磁场定位 AND 触觉感知"
+      - "传感器阵列 AND 力反馈"

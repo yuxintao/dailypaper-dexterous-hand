@@ -1,0 +1,141 @@
+# 磁触觉灵巧手论文推荐知识图谱
+# 用于构造搜索query和评估相关度
+
+# ============================================================
+# 关键词簇（中英文对照，用于构造搜索query）
+# ============================================================
+keyword_clusters:
+  - id: magnetic_tactile
+    name: "磁触觉感知"
+    zh: ["磁触觉", "霍尔传感器", "磁场感知", "磁定位", "磁通量", "磁敏传感器", "三维霍尔", "磁矢量"]
+    en: ["magnetic tactile", "hall effect sensor", "magnetic sensing", "magnetic localization", "magnetic flux", "3D hall sensor", "magnetometer array"]
+
+  - id: dexterous_hand
+    name: "灵巧手与机器人手指"
+    zh: ["灵巧手", "机器人手指", "机械手", "末端执行器", "拟人手", "欠驱动手", "多指手"]
+    en: ["dexterous hand", "robotic finger", "manipulator", "gripper", "anthropomorphic hand", "underactuated hand", "multi-fingered hand"]
+
+  - id: sensor_array
+    name: "传感器阵列与电子皮肤"
+    zh: ["传感器阵列", "多点触觉", "触觉皮肤", "电子皮肤", "柔性传感器", "触觉阵列", "分布式传感"]
+    en: ["sensor array", "multi-point tactile", "tactile skin", "e-skin", "soft sensor", "tactile array", "distributed sensing"]
+
+  - id: tactile_deep_learning
+    name: "触觉深度学习"
+    zh: ["触觉深度学习", "触觉Transformer", "图神经网络", "触觉自监督", "触觉迁移学习", "触觉表征学习"]
+    en: ["tactile deep learning", "tactile transformer", "GNN tactile", "self-supervised touch", "tactile transfer learning", "tactile representation"]
+
+  - id: magnetic_modeling
+    name: "磁场建模与仿真"
+    zh: ["偶极子模型", "磁场正演", "磁场反演", "磁标量势", "有限元磁场", "COMSOL磁仿真", "磁偶极子"]
+    en: ["dipole model", "magnetic forward model", "magnetic inversion", "magnetic scalar potential", "FEM magnetics", "COMSOL magnetic", "magnetic dipole"]
+
+  - id: hand_control
+    name: "灵巧手控制与抓取"
+    zh: ["阻抗控制", "力控", "抓取规划", "滑移检测", "触觉伺服", "力反馈", "柔顺控制"]
+    en: ["impedance control", "force control", "grasp planning", "slip detection", "tactile servoing", "force feedback", "compliance control"]
+
+  - id: tactile_simulation
+    name: "触觉仿真与虚实迁移"
+    zh: ["触觉仿真", "磁仿真", "COMSOL磁", "有限元触觉", "虚实迁移", "域随机化"]
+    en: ["tactile simulation", "magnetic simulation", "COMSOL magnetic", "FEM tactile", "sim-to-real", "domain randomization"]
+
+  - id: novel_tactile
+    name: "新型触觉感知范式"
+    zh: ["弹性波", "超声触觉", "摩擦电", "压电触觉", "量子隧道", "电容触觉", "光纤触觉", "声学触觉"]
+    en: ["elastic wave tactile", "ultrasonic tactile", "triboelectric", "piezoelectric touch", "quantum tunneling touch", "capacitive tactile", "fiber optic tactile", "acoustic tactile"]
+
+# ============================================================
+# 目标研究组（追踪其最新发表）
+# ============================================================
+research_groups:
+  - name: "MIT MCube Lab"
+    people: ["Ted Adelson", "Wenzhen Yuan"]
+    focus: ["GelSight", "tactile sensing", "soft robotics"]
+
+  - name: "Stanford BDML"
+    people: ["Allison Okamura", "Monroe Kennedy"]
+    focus: ["haptics", "manipulation", "tactile servoing"]
+
+  - name: "Meta AI Robotics"
+    people: ["Roberto Calandra", "Mike Lambeta"]
+    focus: ["DIGIT", "touch processing", "sim-to-real tactile"]
+
+  - name: "CMU RoboTouch"
+    people: ["Oliver Kroemer", "David Held"]
+    focus: ["tactile manipulation", "robot learning"]
+
+  - name: "Bristol Robotics Lab"
+    people: ["Nathan Lepora"]
+    focus: ["biomimetic tactile", "tactile hyperacuity"]
+
+  - name: "DLR (German Aerospace Center)"
+    people: ["Alin Albu-Schäffer", "Sami Haddadin"]
+    focus: ["dexterous hand", "torque control", "tactile sensing"]
+
+  - name: "帕西尼感知科技 (PaXini)"
+    focus: ["磁触觉传感器阵列", "灵巧手", "触觉信号处理"]
+    patents: ["CN120721273A", "CN120721274A"]
+
+  - name: "Shadow Robot"
+    focus: ["dexterous hand", "DEX-EE", "tactile sensor integration"]
+
+  - name: "Tesla Optimus / Bot"
+    focus: ["dexterous hand", "tactile sensing", "manipulation"]
+
+# ============================================================
+# 目标期刊/会议
+# ============================================================
+target_venues:
+  tier_1:
+    - "Nature Machine Intelligence"
+    - "Science Robotics"
+  tier_2:
+    - "IEEE Trans. on Robotics (T-RO)"
+    - "Int. Journal of Robotics Research (IJRR)"
+    - "Science Advances"
+  tier_3:
+    - "IEEE Trans. on Mechatronics (T-MECH)"
+    - "IEEE Robotics and Automation Letters (RA-L)"
+    - "IEEE Sensors Journal"
+    - "Soft Robotics"
+  conferences:
+    - "ICRA"
+    - "IROS"
+    - "RSS (Robotics: Science and Systems)"
+    - "CoRL (Conference on Robot Learning)"
+    - "ICML (ML for robotics sessions)"
+    - "NeurIPS (robot learning sessions)"
+
+# ============================================================
+# 种子论文（已研读，用于追踪引用/被引关系）
+# ============================================================
+seed_papers:
+  - title: "A soft skin with self-decoupled three-axis force-sensing taxels"
+    authors: "Yan Y, Zermane A, Pan J, Kheddar A"
+    venue: "Nature Machine Intelligence, 2024"
+    doi: "10.1038/s42256-024-00904-9"
+
+  - title: "Large-area magnetic skin for multi-point and multi-scale tactile sensing with super-resolution"
+    venue: "2019"
+
+  - title: "Contact Shape and Pose Recognition Utilizing a Multipole Magnetic Tactile Sensor With a Metalearning Model"
+    venue: "IEEE Sensors, 2022"
+
+  - title: "Magnetic Localization for an Electromagnetic-Based Haptic Interface"
+    venue: "2018"
+
+  - title: "A Tactile Sensor Based on Magnetic Sensing: Design and Mechanism"
+    venue: "2019"
+
+  - title: "基于改进LM-GN算法的磁性目标定位方法研究"
+    venue: "CN, 2023"
+
+# ============================================================
+# 推荐输出风格模板
+# ============================================================
+output_template:
+  daily_note: "papers/{year}/{month}/{day}.md"
+  index: "papers/INDEX.md"
+  weekly_report: "reports/weekly/{year}-W{week}.md"
+  monthly_report: "reports/monthly/{year}-{month}.md"

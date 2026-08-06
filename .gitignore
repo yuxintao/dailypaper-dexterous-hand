@@ -1,0 +1,18 @@
+# 论文PDF本地备份
+*/*.pdf
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
