@@ -15,6 +15,46 @@ from search import run_search
 from decompose import decompose_paper
 
 # ============================================================
+# PDF download
+# ============================================================
+def download_pdf(paper: dict, output_dir: str) -> str:
+    """Download PDF for a paper if open access. Returns local path or empty string."""
+    import requests
+
+    # Try openAccessPdf from Semantic Scholar
+    pdf_url = paper.get("openAccessPdf", {}).get("url", "")
+    if not pdf_url:
+        # Try constructing arXiv PDF URL from externalIds
+        arxiv_id = paper.get("externalIds", {}).get("ArXiv", "")
+        if arxiv_id:
+            pdf_url = f"https://arxiv.org/pdf/{arxiv_id}"
+
+    if not pdf_url:
+        return ""
+
+    # Safe filename
+    title = paper.get("title", "paper")
+    safe_title = "".join(c for c in title[:60] if c.isascii() and c not in r'\/:*?"<>|').strip().replace(" ", "_")
+    filepath = os.path.join(output_dir, f"{safe_title}.pdf")
+
+    if os.path.exists(filepath):
+        print(f"     PDF already cached: {os.path.basename(filepath)}")
+        return filepath
+
+    try:
+        print(f"     Downloading PDF: {pdf_url[:80]}...")
+        resp = requests.get(pdf_url, timeout=60, headers={"User-Agent": "dailypaper-dexterous-hand/1.0"})
+        resp.raise_for_status()
+        with open(filepath, "wb") as f:
+            f.write(resp.content)
+        size_kb = len(resp.content) // 1024
+        print(f"     PDF saved: {os.path.basename(filepath)} ({size_kb} KB)")
+        return filepath
+    except Exception as e:
+        print(f"     [WARN] PDF download failed: {e}")
+        return ""
+
+# ============================================================
 # Keyword filter — papers MUST match at least 1 cluster
 # ============================================================
 RELEVANCE_KEYWORDS = [
@@ -119,6 +159,14 @@ def run_daily():
 
     # Step 3: Select top 3
     selected = all_papers[:3]
+
+    # Step 3.5: Download PDFs
+    pdf_dir = os.path.join(os.path.dirname(__file__), "..", "archive", "pdfs",
+                           today.strftime("%Y"), today.strftime("%m"))
+    os.makedirs(pdf_dir, exist_ok=True)
+    print(f"\n>>> Phase 3.5: Downloading PDFs for {len(selected)} papers...")
+    for p in selected:
+        p["_pdf_path"] = download_pdf(p, pdf_dir)
 
     # Step 4: Decompose and write
     print(f"\n>>> Phase 3: Decomposing {len(selected)} recommendations...")
