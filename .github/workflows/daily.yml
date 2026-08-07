@@ -24,7 +24,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install requests pyyaml
+        run: pip install requests pyyaml openai
 
       - name: Run daily recommendation
         env:

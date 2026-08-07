@@ -26,23 +26,18 @@ def generate_queries():
     """Generate search queries for the 3 rounds."""
     return {
         "round1_exact": [
-            "magnetic tactile sensor dexterous hand",
-            "hall effect sensor array touch localization",
-            "magnetic field tactile skin deep learning",
-            "磁触觉 灵巧手 定位",
+            "magnetic tactile sensor robot finger localization force",
+            "hall effect sensor array tactile skin dexterous manipulation",
+            "magnetic field based touch sensing deep learning regression",
         ],
         "round2_complementary": [
-            "soft tactile sensor robot manipulation deep learning",
-            "tactile transformer grasping force estimation",
-            "sim-to-real tactile simulation magnetic",
-            "tactile sensor calibration noise reduction",
-            "novel tactile sensing elastic wave ultrasonic",
+            "tactile sensor robot hand force estimation deep learning",
+            "soft tactile sensing magnetic localization position prediction",
+            "tactile sensor calibration self-supervised transfer learning",
         ],
         "round3_patent": [
-            "magnetic tactile sensor patent",
-            "hall effect array robot finger",
-            "磁触觉 传感器 专利",
-            "灵巧手 触觉感知 霍尔",
+            "magnetic tactile sensor robot hand",
+            "hall effect array force touch localization",
         ],
     }
 
