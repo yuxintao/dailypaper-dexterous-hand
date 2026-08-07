@@ -1,5 +1,5 @@
-# 论文PDF本地备份
-*/*.pdf
+# 论文PDF本地备份（不入库，版权保护）
+archive/pdfs/
 
 # Python
 __pycache__/
