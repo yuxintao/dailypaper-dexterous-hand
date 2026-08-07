@@ -1,237 +1,122 @@
 #!/usr/bin/env python3
 """
-Daily paper recommendation search engine.
-Supports Semantic Scholar API, arXiv, Google Patents, and Chinese patent databases.
+Daily paper search engine.
+Semantic Scholar as primary source, with rate-limit handling and retry logic.
+Google Patents scraping removed (unreliable from GitHub Actions IP).
 """
 import requests
 import time
-import json
 import re
 import sys
 import os
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import datetime
 
 # ============================================================
 # Configuration
 # ============================================================
 SEMANTIC_SCHOLAR_BASE = "https://api.semanticscholar.org/graph/v1"
-USER_AGENT = "dailypaper-dexterous-hand/1.0 (mailto:researcher@example.com)"
-REQUEST_DELAY = 3.1  # seconds between API calls (respect rate limit: 100/5min)
+REQUEST_DELAY = 10.0      # seconds between API calls (GitHub Actions IPs get rate-limited)
+RETRY_DELAY = 35.0        # wait when hitting 429
+MAX_RETRIES = 2
 
 # ============================================================
-# Query generation
+# Search queries — tightly scoped to tactile + dexterous hand
 # ============================================================
-def generate_queries():
-    """Generate search queries for the 3 rounds."""
-    return {
-        "round1_exact": [
-            "magnetic tactile sensor robot finger localization force",
-            "hall effect sensor array tactile skin dexterous manipulation",
-            "magnetic field based touch sensing deep learning regression",
-        ],
-        "round2_complementary": [
-            "tactile sensor robot hand force estimation deep learning",
-            "soft tactile sensing magnetic localization position prediction",
-            "tactile sensor calibration self-supervised transfer learning",
-        ],
-        "round3_patent": [
-            "magnetic tactile sensor robot hand",
-            "hall effect array force touch localization",
-        ],
+QUERIES = [
+    # Round 1: Core magnetic tactile
+    ("magnetic tactile sensor + robot hand force localization", 8),
+    ("hall effect sensor array + tactile skin manipulation", 8),
+    ("magnetic field sensing + dexterous manipulation learning", 5),
+    # Round 2: Tactile sensing (broader)
+    ("tactile sensor + robot hand + force estimation neural network", 5),
+    ("tactile sensing + magnetic localization + position regression", 5),
+    ("tactile sensor + deep learning + calibration self-supervised", 5),
+    # Round 3: Dexterous hand + sensing
+    ("dexterous hand + touch sensing + manipulation 2024 2025", 5),
+    ("robot finger + tactile array + force feedback learning", 5),
+]
+
+
+def _api_call(url: str, params: dict, retries: int = MAX_RETRIES) -> dict:
+    """Call Semantic Scholar API with retry on 429."""
+    headers = {
+        "User-Agent": "dailypaper-dexterous-hand/1.0",
+        "Accept": "application/json",
     }
+    for attempt in range(retries + 1):
+        try:
+            resp = requests.get(url, params=params, headers=headers, timeout=30)
+            if resp.status_code == 429:
+                wait = RETRY_DELAY * (attempt + 1)
+                print(f"  [429] Rate limited. Waiting {wait:.0f}s (attempt {attempt+1}/{retries+1})...")
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+            return resp.json()
+        except requests.exceptions.RequestException as e:
+            if attempt < retries:
+                print(f"  [WARN] Request failed: {e}. Retrying...")
+                time.sleep(RETRY_DELAY)
+            else:
+                print(f"  [WARN] Giving up after {retries+1} attempts: {e}")
+                return {"data": []}
+    return {"data": []}
 
-# ============================================================
-# Semantic Scholar API
-# ============================================================
-def search_semantic_scholar(query: str, limit: int = 10, year_from: str = "2023") -> list:
+
+def search_semantic_scholar(query: str, limit: int = 8) -> list:
     """Search papers on Semantic Scholar."""
     url = f"{SEMANTIC_SCHOLAR_BASE}/paper/search"
     params = {
         "query": query,
         "limit": limit,
         "offset": 0,
-        "year": f"{year_from}-",
-        "fields": "title,authors,year,venue,publicationDate,externalIds,abstract,tldr,citationCount,isOpenAccess,openAccessPdf,fieldsOfStudy",
+        "year": "2023-",
+        "fields": "title,authors,year,venue,publicationDate,externalIds,abstract,tldr,citationCount,isOpenAccess,openAccessPdf",
     }
-    headers = {"User-Agent": USER_AGENT}
-
-    try:
-        resp = requests.get(url, params=params, headers=headers, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-        return data.get("data", [])
-    except Exception as e:
-        print(f"  [WARN] Semantic Scholar search failed for '{query}': {e}")
-        return []
+    data = _api_call(url, params)
+    return data.get("data", [])
 
 
-def get_paper_details(paper_id: str) -> Optional[dict]:
-    """Get detailed info for a specific paper."""
-    url = f"{SEMANTIC_SCHOLAR_BASE}/paper/{paper_id}"
-    params = {
-        "fields": "title,authors,year,venue,publicationDate,externalIds,abstract,tldr,citationCount,references,citations,isOpenAccess,openAccessPdf"
-    }
-    headers = {"User-Agent": USER_AGENT}
-    try:
-        resp = requests.get(url, params=params, headers=headers, timeout=30)
-        resp.raise_for_status()
-        return resp.json()
-    except Exception as e:
-        print(f"  [WARN] Failed to get details for {paper_id}: {e}")
-        return None
-
-# ============================================================
-# arXiv API (via Semantic Scholar or direct)
-# ============================================================
-def search_arxiv(query: str, max_results: int = 10) -> list:
-    """Search arXiv for recent preprints."""
-    url = "http://export.arxiv.org/api/query"
-    params = {
-        "search_query": query,
-        "start": 0,
-        "max_results": max_results,
-        "sortBy": "submittedDate",
-        "sortOrder": "descending",
-    }
-    try:
-        resp = requests.get(url, params=params, timeout=30)
-        resp.raise_for_status()
-        # Parse Atom XML (simple regex approach)
-        entries = re.findall(r"<entry>(.*?)</entry>", resp.text, re.DOTALL)
-        results = []
-        for entry in entries:
-            title = re.search(r"<title>(.*?)</title>", entry)
-            summary = re.search(r"<summary>(.*?)</summary>", entry)
-            arxiv_id = re.search(r"<id>.*?/(.*?)</id>", entry)
-            published = re.search(r"<published>(.*?)</published>", entry)
-            results.append({
-                "title": title.group(1).strip() if title else "",
-                "abstract": summary.group(1).strip()[:500] if summary else "",
-                "arxivId": arxiv_id.group(1) if arxiv_id else "",
-                "year": published.group(1)[:4] if published else "",
-                "source": "arxiv",
-            })
-        return results
-    except Exception as e:
-        print(f"  [WARN] arXiv search failed: {e}")
-        return []
-
-# ============================================================
-# Patent search (Google Patents + WIPO)
-# ============================================================
-def search_google_patents(query: str, max_results: int = 5) -> list:
-    """Search Google Patents (web scraping, gentle rate)."""
-    url = "https://patents.google.com/"
-    params = {
-        "q": query,
-        "num": max_results,
-        "language": "EN",
-    }
-    headers = {"User-Agent": USER_AGENT}
-    try:
-        resp = requests.get(url, params=params, headers=headers, timeout=30)
-        resp.raise_for_status()
-        # Extract patent titles and numbers from HTML (simple regex)
-        titles = re.findall(r'<result-title[^>]*>(.*?)</result-title>', resp.text, re.DOTALL)
-        patent_ids = re.findall(r'/patent/([A-Z]{2}\d+[A-Z]?\d*)/', resp.text)
-        results = []
-        for i, title in enumerate(titles[:max_results]):
-            results.append({
-                "title": re.sub(r'<[^>]+>', '', title).strip(),
-                "patentId": patent_ids[i] if i < len(patent_ids) else "",
-                "source": "google_patents",
-                "year": "",
-            })
-        return results
-    except Exception as e:
-        print(f"  [WARN] Google Patents search failed: {e}")
-        return []
-
-# ============================================================
-# Deduplication
-# ============================================================
-def deduplicate(papers: list) -> list:
-    """Remove duplicate papers by title similarity."""
-    seen_titles = set()
-    unique = []
-    for paper in papers:
-        title_key = re.sub(r'[^a-z0-9]', '', paper.get("title", "").lower())[:80]
-        if title_key and title_key not in seen_titles:
-            seen_titles.add(title_key)
-            unique.append(paper)
-    return unique
-
-# ============================================================
-# Main search orchestrator
-# ============================================================
 def run_search(verbose: bool = True) -> list:
-    """
-    Execute the full 3-round search pipeline.
-    Returns a list of deduplicated, scored paper dicts.
-    """
+    """Execute search across all queries and return deduplicated results."""
     all_papers = []
-    queries = generate_queries()
 
-    # Round 1: Exact match (Semantic Scholar)
-    if verbose:
-        print("=== Round 1: Exact Match (Semantic Scholar) ===")
-    for q in queries["round1_exact"]:
+    for i, (query, limit) in enumerate(QUERIES):
+        round_num = 1 if i < 3 else (2 if i < 6 else 3)
         if verbose:
-            print(f"  Query: {q}")
-        papers = search_semantic_scholar(q, limit=8)
+            print(f"  [R{round_num}] Searching: {query}")
+
+        papers = search_semantic_scholar(query, limit=limit)
         for p in papers:
-            p["search_round"] = 1
+            p["search_round"] = round_num
             p["source"] = "semantic_scholar"
-        all_papers.extend(papers)
-        time.sleep(REQUEST_DELAY)
 
-    # Round 2: Complementary methods (Semantic Scholar + arXiv)
-    if verbose:
-        print("\n=== Round 2: Complementary Methods ===")
-    for q in queries["round2_complementary"]:
         if verbose:
-            print(f"  Query: {q}")
-        papers = search_semantic_scholar(q, limit=5)
-        for p in papers:
-            p["search_round"] = 2
-            p["source"] = "semantic_scholar"
+            print(f"         Found: {len(papers)} papers")
+
         all_papers.extend(papers)
-        time.sleep(REQUEST_DELAY)
-    # Also check arXiv for very recent preprints
-    arxiv_papers = search_arxiv("tactile sensor robot hand learning", max_results=5)
-    for p in arxiv_papers:
-        p["search_round"] = 2
-    all_papers.extend(arxiv_papers)
 
-    # Round 3: Patents
+        if i < len(QUERIES) - 1:
+            time.sleep(REQUEST_DELAY)
+
+    # Deduplicate by title
+    seen = set()
+    unique = []
+    for p in all_papers:
+        key = re.sub(r'[^a-z0-9]', '', p.get("title", "").lower())[:80]
+        if key and key not in seen:
+            seen.add(key)
+            unique.append(p)
+
     if verbose:
-        print("\n=== Round 3: Patents ===")
-    for q in queries["round3_patent"]:
-        if verbose:
-            print(f"  Query: {q}")
-        patents = search_google_patents(q, max_results=3)
-        for p in patents:
-            p["search_round"] = 3
-            p["is_patent"] = True
-        all_papers.extend(patents)
-        time.sleep(REQUEST_DELAY * 2)
-
-    # Deduplicate
-    all_papers = deduplicate(all_papers)
-    if verbose:
-        print(f"\n=== Total unique papers found: {len(all_papers)} ===")
-
-    return all_papers
+        print(f"\n  Total unique: {len(unique)} papers")
+    return unique
 
 
 if __name__ == "__main__":
     papers = run_search()
-    for i, p in enumerate(papers[:15]):
-        title = p.get("title", "N/A")[:80]
-        year = p.get("year", "N/A")
-        citations = p.get("citationCount", "N/A")
-        source = p.get("source", "N/A")
-        print(f"{i+1:2d}. [{year}] {title}")
-        print(f"     Citations: {citations} | Source: {source} | Round: {p.get('search_round','?')}")
-        print()
+    for i, p in enumerate(papers[:20]):
+        title = p.get("title", "N/A")[:90]
+        year = p.get("year", "?")
+        citations = p.get("citationCount", "?")
+        print(f"  {i+1:2d}. [{year}|cit:{citations}] {title}")
