@@ -32,27 +32,30 @@ jobs:
         run: python scripts/daily_rec.py
 
       - name: Create GitHub Issue
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const today = new Date();
-            const y = today.getFullYear();
-            const m = String(today.getMonth() + 1).padStart(2, '0');
-            const d = String(today.getDate()).padStart(2, '0');
-            const filePath = `papers/${y}/${m}/${m}${d}.md`;
-            if (fs.existsSync(filePath)) {
-              const content = fs.readFileSync(filePath, 'utf8');
-              const title = content.split('\n')[0].replace('# ', '');
-              await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: `[每日推荐] ${y}-${m}-${d}`,
-                body: content.substring(0, 60000),
-                labels: []
-              });
-            }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+          Y=$(date +%Y)
+          M=$(date +%m)
+          D=$(date +%d)
+          FILE="papers/${Y}/${M}/${M}${D}.md"
+          if [ -f "$FILE" ]; then
+            TITLE=$(head -1 "$FILE" | sed 's/^# //')
+            # Check if issue already exists for today
+            EXISTING=$(gh issue list --search "[每日推荐] ${TITLE}" --json number -q '.[0].number' 2>/dev/null)
+            if [ -z "$EXISTING" ]; then
+              gh issue create \
+                --title "[每日推荐] ${TITLE}" \
+                --body "$(cat "$FILE")" \
+                --label "daily-recommendation"
+              echo "Issue created successfully."
+            else
+              echo "Issue already exists (#${EXISTING}). Skipping."
+            fi
+          else
+            echo "No paper file found at $FILE. Skipping issue creation."
+          fi
 
       - name: Commit and push
         run: |
