@@ -42,8 +42,13 @@ jobs:
           FILE="papers/${Y}/${M}/${M}${D}.md"
           if [ -f "$FILE" ]; then
             TITLE=$(head -1 "$FILE" | sed 's/^# //')
-            # Check if issue already exists for today
-            EXISTING=$(gh issue list --search "[每日推荐] ${TITLE}" --json number -q '.[0].number' 2>/dev/null)
+            # Check by date label to avoid Chinese character matching issues
+            DATE_LABEL="${Y}${M}${D}"
+            EXISTING=$(gh issue list --search "每日推荐 in:title ${TODAY}" --json number -q '.[0].number' 2>/dev/null)
+            if [ -z "$EXISTING" ]; then
+              # Also try simpler search with just the date
+              EXISTING=$(gh issue list --search "${TODAY} in:title" --json number -q '.[0].number' 2>/dev/null)
+            fi
             if [ -z "$EXISTING" ]; then
               gh issue create \
                 --title "[每日推荐] ${TITLE}" \
