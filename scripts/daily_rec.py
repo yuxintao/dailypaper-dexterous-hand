@@ -98,6 +98,46 @@ def is_weekday(d: datetime = None) -> bool:
     return d.weekday() < 5  # 0=Mon, 4=Fri
 
 
+def get_all_recommended_titles() -> set:
+    """Read all previously recommended paper titles from markdown files."""
+    base_dir = os.path.join(os.path.dirname(__file__), "..", "papers")
+    titles = set()
+    if not os.path.exists(base_dir):
+        return titles
+    for root, dirs, files in os.walk(base_dir):
+        for fname in files:
+            if fname.endswith(".md") and fname[0].isdigit():
+                fpath = os.path.join(root, fname)
+                try:
+                    with open(fpath, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    # Extract paper titles: lines starting with "# " but not "# 每日" or "# 推荐"
+                    for line in content.split("\n"):
+                        line = line.strip()
+                        if line.startswith("# ") and "每日" not in line and "推荐" not in line:
+                            # Normalize: lowercase, remove punctuation
+                            title = re.sub(r"[^a-z0-9]", "", line.lower())[:80]
+                            if title:
+                                titles.add(title)
+                except Exception:
+                    pass
+    return titles
+
+
+def is_duplicate(paper: dict, seen_titles: set) -> bool:
+    """Check if a paper title is too similar to any previously recommended title."""
+    title = paper.get("title", "")
+    normalized = re.sub(r"[^a-z0-9]", "", title.lower())[:80]
+    if normalized in seen_titles:
+        return True
+    # Also check first 40 chars for near-duplicates
+    short = normalized[:40]
+    for st in seen_titles:
+        if st[:40] == short:
+            return True
+    return False
+
+
 def run_daily():
     """Execute the daily recommendation pipeline."""
     today = datetime.now()
@@ -132,8 +172,24 @@ def run_daily():
         # Write an empty report so the workflow doesn't crash on no-changes commit
         return
 
-    # Step 2: Score and rank
-    print(f"\n>>> Phase 2: Scoring {len(all_papers)} candidates...")
+    # Step 2: Remove duplicates against all previous recommendations
+    seen_titles = get_all_recommended_titles()
+    print(f"\n>>> Phase 2: Dedup — {len(seen_titles)} previously recommended titles loaded")
+    unique_papers = []
+    for p in all_papers:
+        if is_duplicate(p, seen_titles):
+            print(f"  ✗ DUPLICATE: {p.get('title', 'N/A')[:80]}")
+        else:
+            unique_papers.append(p)
+    print(f"  {len(unique_papers)}/{len(all_papers)} papers after dedup")
+    all_papers = unique_papers
+
+    if not all_papers:
+        print("ERROR: All papers filtered as duplicates. No new papers today.")
+        return
+
+    # Step 3: Score and rank
+    print(f"\n>>> Phase 3: Scoring {len(all_papers)} candidates...")
     for p in all_papers:
         score = 0
         year = p.get("year", 0)
@@ -157,10 +213,10 @@ def run_daily():
 
     all_papers.sort(key=lambda x: x.get("_score", 0), reverse=True)
 
-    # Step 3: Select top 3
+    # Step 4: Select top 3
     selected = all_papers[:3]
 
-    # Step 3.5: Download PDFs
+    # Step 5: Download PDFs
     pdf_dir = os.path.join(os.path.dirname(__file__), "..", "archive", "pdfs",
                            today.strftime("%Y"), today.strftime("%m"))
     os.makedirs(pdf_dir, exist_ok=True)
