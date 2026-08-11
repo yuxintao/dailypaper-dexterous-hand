@@ -3,7 +3,7 @@
 
 criteria:
   timeliness:
-    weight: 20
+    weight: 15
     description: "时效性——越新的研究越有前沿参考价值"
     scoring:
       2025_2026: 5
@@ -20,10 +20,10 @@ criteria:
       solid_engineering: 3  # 同类路线的扎实工程改进（如更好的标定方法、噪声抑制、域自适应）
       incremental: 2        # 同类路线的微小修改
       low_relevance: 1      # 光学/视觉触觉等与磁触觉关联弱的路线
-    note: "核心判断标准：这篇论文能否为磁触觉灵巧手算法提供方法层面的创意启发？光学传感器（GelSight等）的纯视觉处理管线与我们的磁场信号处理路线差异较大，价值偏低。"
+    note: "核心判断标准：这篇论文能否为磁触觉灵巧手算法提供方法层面的创意启发？光学传感器（GelSight等）的纯视觉处理管线与我们的磁场信号处理路线差异较大，价值偏低。纯硬件设计、传感器布局、系统集成类工作若无算法贡献，innovation分应≤2。注意与experiment_generation区分：innovation衡量思路本身的新颖性，experiment_generation衡量思路能否转化为我们的实验。"
 
   relevance:
-    weight: 30
+    weight: 25
     description: "相关度——与磁触觉灵巧手技术路线有多近"
     scoring:
       hit_3plus_clusters: 5    # 命中3个以上关键词簇
@@ -39,8 +39,23 @@ criteria:
       - "灵巧手控制/力控/抓取规划/滑移检测"
       - "触觉仿真/COMSOL/虚实迁移"
 
+  experiment_generation:
+    weight: 15
+    description: "实验生成潜力——论文能否催生具体的、可验证的改进实验"
+    scoring:
+      spawns_experiments: 5     # 论文提出明确可验证的机制/假设，读完后能直接写出实验脚本（如"试A/B/C三种dropout策略""验证力值课程学习的有效性"）
+      translatable_method: 4    # 论文有具体方法（如自回归预测、课程学习、对比预训练），翻译到我们的框架需要工作但实验设计清晰
+      needs_creative_leap: 2    # 论文有好的思路，但如何转化为我们的实验需要较大的创造性跳跃，或仅有部分模块可转化
+      vague_or_orthogonal: 0    # 纯硬件/布局/系统集成/遥操作界面，或仅有"触觉很重要"级别的一般性结论，无法催生具体实验
+    note: |
+      核心判断翻转：不衡量"论文离我们的pipeline有多近"，而是衡量"论文能催生多少个可验证实验"。
+      ViTacFormer（PyTorch Transformer，无法直接复用代码）→ 催生了B1(课程学习)、A1(sensor dropout)、C3(差分特征)三个实验 → 4-5分
+      Role of Touch（传感器布局消纳）→ 只有"布局影响性能"的结论，无法设计算法实验 → 0-1分
+      多极磁化超分辨率（硬件磁化工艺）→ 需要定制磁化设备，无算法实验可做 → 0分
+      关键问题：读完这篇论文，我们能不能写出一个 train_4sensor_xxx.m？
+
   reproducibility:
-    weight: 20
+    weight: 15
     description: "可复现性——能否直接验证论文方法"
     scoring:
       open_source: 5           # GitHub上有可运行的代码
@@ -49,14 +64,13 @@ criteria:
     note: "优先推荐有开源代码的论文，这是我们快速验证和融入pipeline的前提"
 
   practicality:
-    weight: 10
+    weight: 15
     description: "实用性——能否在我们的demo数据上快速验证"
     scoring:
       ready_to_test: 5         # 方法可直接在我们的18D磁场数据上验证
       needs_adaptation: 3      # 需要适配（如输入维度变化、需要额外传感器）
       needs_special_hardware: 1 # 需要我们不具备的特殊硬件
 
-  # --- 补充准则 ---
   engineering_feasibility:
     weight: 5
     description: "工程可行性——计算资源需求是否在我们能力范围内"

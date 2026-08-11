@@ -234,6 +234,12 @@ def run_daily():
 
     output_path = os.path.join(output_dir, today.strftime("%m%d") + ".md")
 
+    # Guard against overwriting a previous run from the same day
+    if os.path.exists(output_path) and os.path.getsize(output_path) > 100:
+        backup_path = output_path.replace(".md", f"_backup_{today.strftime('%H%M')}.md")
+        os.rename(output_path, backup_path)
+        print(f"  [INFO] Existing {today.strftime('%m%d')}.md backed up to {os.path.basename(backup_path)}")
+
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(f"# 每日论文推荐 — {today.strftime('%Y年%m月%d日')}\n\n")
         f.write(f"> 搜索时间：{today.strftime('%H:%M UTC')}\n")
