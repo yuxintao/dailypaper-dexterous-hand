@@ -2,8 +2,9 @@ name: Daily Paper Recommendation
 
 on:
   schedule:
-    - cron: "0 0 * * 1-5"  # Mon-Fri at 00:00 UTC (08:00 Beijing)
-  workflow_dispatch:        # Allow manual trigger
+    - cron: "0 0 * * *"       # Every day at 00:00 UTC (rely on script to skip weekends)
+    - cron: "0 12 * * 1-5"   # Mon-Fri at 12:00 UTC (backup: 20:00 Beijing)
+  workflow_dispatch:          # Allow manual trigger
 
 permissions:
   contents: write
