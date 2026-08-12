@@ -30,6 +30,7 @@ jobs:
       - name: Run daily recommendation
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          SEMANTIC_SCHOLAR_API_KEY: ${{ secrets.SEMANTIC_SCHOLAR_API_KEY }}
         run: python scripts/daily_rec.py
 
       - name: Create GitHub Issue

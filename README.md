@@ -62,7 +62,7 @@ python scripts/daily_rec.py --help
 
 - [x] 评价准则体系（8维加权 + experiment_generation）
 - [x] 知识图谱（8关键词簇+9研究组+5种子论文）
-- [x] 搜索引擎 (Semantic Scholar, 3轮8查询, 429重试)
+- [x] 搜索引擎 (Semantic Scholar + arXiv 双源, 429重试)
 - [x] LLM 拆解 + 自动评分 (DeepSeek 主 / Anthropic fallback)
 - [x] GitHub Actions 双 cron 定时触发 (00:00 + 12:00 UTC)
 - [x] 交叉日去重 + 多样性惩罚
