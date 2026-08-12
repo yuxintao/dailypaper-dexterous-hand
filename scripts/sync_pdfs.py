@@ -28,19 +28,34 @@ def find_arxiv_ids(markdown_text: str) -> list:
 
 
 def search_arxiv_by_title(title: str) -> str:
-    """Fallback: search arXiv API by title to find arXiv ID. Returns '' if not found."""
+    """Fallback: search arXiv API by title to find arXiv ID. Validates title match. Returns '' if not found."""
     import urllib.parse
+    import difflib
     try:
-        # Truncate and clean title for search
-        query = title[:100].strip()
-        url = f"http://export.arxiv.org/api/query?search_query=ti:{urllib.parse.quote(query)}&max_results=1"
+        query = title[:120].strip()
+        url = f"http://export.arxiv.org/api/query?search_query=ti:{urllib.parse.quote(query)}&max_results=3"
         resp = requests.get(url, timeout=15,
                            headers={"User-Agent": "dailypaper-sync/1.0"})
         resp.raise_for_status()
-        # Extract arXiv ID from the <id> tag
-        m = re.search(r'<id>http://arxiv\.org/abs/(\d{4}\.\d{4,5})', resp.text)
-        if m:
-            return m.group(1)
+        # Parse all entries to find best title match
+        entries = re.findall(r'<entry>(.*?)</entry>', resp.text, re.DOTALL)
+        best_id = ""
+        best_ratio = 0
+        for entry in entries:
+            m_id = re.search(r'<id>http://arxiv\.org/abs/(\d{4}\.\d{4,5})', entry)
+            m_title = re.search(r'<title>(.*?)</title>', entry, re.DOTALL)
+            if m_id and m_title:
+                found_title = m_title.group(1).strip().replace('\n', ' ')
+                ratio = difflib.SequenceMatcher(None, title.lower()[:60], found_title.lower()[:60]).ratio()
+                if ratio > best_ratio:
+                    best_ratio = ratio
+                    best_id = m_id.group(1)
+        # Require at least 80% title similarity to accept the match
+        if best_ratio >= 0.80:
+            return best_id
+        else:
+            print(f"     ⚠ best match ratio={best_ratio:.2f} < 0.80, skipping")
+            return ""
     except Exception:
         pass
     return ""
