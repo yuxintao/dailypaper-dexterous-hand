@@ -33,7 +33,7 @@ def search_arxiv_by_title(title: str) -> str:
     import difflib
     try:
         query = title[:120].strip()
-        url = f"http://export.arxiv.org/api/query?search_query=ti:{urllib.parse.quote(query)}&max_results=3"
+        url = f"http://export.arxiv.org/api/query?search_query=all:{urllib.parse.quote(query)}&max_results=5"
         resp = requests.get(url, timeout=15,
                            headers={"User-Agent": "dailypaper-sync/1.0"})
         resp.raise_for_status()
