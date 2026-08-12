@@ -98,6 +98,9 @@ def search_semantic_scholar(query: str, limit: int = 8) -> list:
         "limit": limit,
         "offset": 0,
         "year": "2023-",
+        "fieldsOfStudy": "Computer Science,Engineering",
+        "publicationTypes": "Review,JournalArticle,Conference",
+        "openAccessPdf": "",
         "fields": "title,authors,year,venue,publicationDate,externalIds,abstract,tldr,citationCount,isOpenAccess,openAccessPdf",
     }
     data = _api_call(url, params)

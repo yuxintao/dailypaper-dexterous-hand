@@ -63,6 +63,13 @@ jobs:
             echo "No paper file found at $FILE. Skipping issue creation."
           fi
 
+      - name: Upload PDFs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdfs-${{ github.run_id }}
+          path: archive/pdfs/
+          retention-days: 90
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
