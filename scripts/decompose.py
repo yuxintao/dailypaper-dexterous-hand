@@ -293,6 +293,18 @@ def decompose_paper(paper: dict, use_api: bool = True) -> tuple:
     citations = paper.get("citationCount", "?")
     source = paper.get("source", "unknown")
 
+    # Extract arXiv ID for PDF link
+    arxiv_id = ""
+    ext_ids = paper.get("externalIds", {})
+    if isinstance(ext_ids, dict):
+        arxiv_id = ext_ids.get("ArXiv", "")
+    if not arxiv_id:
+        # Fallback: try openAccessPdf URL
+        pdf_url = paper.get("openAccessPdf", {}).get("url", "")
+        m = re.search(r'arxiv.*?(\d{4}\.\d{4,5})', pdf_url)
+        if m:
+            arxiv_id = m.group(1)
+
     # Try API decomposition
     if use_api and API_KEY:
         prompt = DECOMPOSE_PROMPT.format(
@@ -310,6 +322,10 @@ def decompose_paper(paper: dict, use_api: bool = True) -> tuple:
             result = _call_anthropic(prompt)
 
         if result:
+            # Prepend arXiv link for PDF sync
+            if arxiv_id:
+                arxiv_line = f"> 📄 arXiv: [{arxiv_id}](https://arxiv.org/pdf/{arxiv_id})\n\n"
+                result = arxiv_line + result
             scores = parse_scores(result)
             if scores:
                 print(f"  [Scores] {scores}")
